@@ -22,7 +22,7 @@ function createApp(env) {
     paywall: /^(on|true|1)$/i.test(env.PAYWALL || ''),
     publicUrl: (env.PUBLIC_URL || env.RENDER_EXTERNAL_URL || '').replace(/\/+$/, ''),
     dataDir: path.resolve(env.DATA_DIR || path.join(__dirname, 'data')),
-    pub: path.join(__dirname, 'public'),
+    pub: __dirname,
     statsTtl: env.STATS_TTL_MS != null && env.STATS_TTL_MS !== '' ? +env.STATS_TTL_MS : 3000,
   };
   if (C.admin && C.admin.length < 16) throw new Error('ADMIN_KEY must be at least 16 characters');
