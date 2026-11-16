@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dust Run</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 120%,#3b2f17 0,#14110a 55%,#0a0906 100%);color:#e8e4d8;font-family:'Rajdhani',system-ui,sans-serif}
+main{width:min(380px,calc(100vw - 40px))}
+h1{margin:0 0 4px;font-size:44px;font-weight:700;letter-spacing:.18em;color:#f2ead2;line-height:1}
+p{margin:0 0 26px;color:#a9a48f;letter-spacing:.06em;font-size:15px}
+input{width:100%;padding:14px 14px;font:600 20px 'Rajdhani',system-ui,sans-serif;letter-spacing:.14em;text-transform:uppercase;background:#0d0c08;color:#f2ead2;border:1px solid #4b4637;border-radius:0;outline:0}
+input:focus-visible{border-color:#e7c66f;box-shadow:0 0 0 2px rgba(231,198,111,.35)}
+button{width:100%;margin-top:10px;padding:14px;font:700 17px 'Rajdhani',system-ui,sans-serif;letter-spacing:.2em;background:#e7c66f;color:#16130b;border:0;cursor:pointer}
+button:hover{background:#f2d684}button:focus-visible{outline:2px solid #fff;outline-offset:2px}button:disabled{opacity:.6;cursor:default}
+#err{min-height:22px;margin:12px 0 0;color:#ff8a78;font-size:15px;letter-spacing:.04em}
+</style>
+</head>
+<body>
+<main>
+  <h1>DUST RUN</h1>
+  <p>Enter your access key to play.</p>
+  <input id="key" placeholder="DR-XXXX-XXXX-XXXX" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="24" aria-label="Access key">
+  <button id="go">ENTER</button>
+  <div id="err" role="alert"></div>
+</main>
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)};
+function pid(){var p='';try{p=localStorage.getItem('dr_pid')||''}catch(e){}
+  if(!/^[A-Za-z0-9-]{8,64}$/.test(p)){p=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():(Date.now().toString(36)+Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2));try{localStorage.setItem('dr_pid',p)}catch(e){}}
+  return p}
+function go(){var b=$('go');b.disabled=true;$('err').textContent='';
+  fetch('/api/redeem',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:$('key').value,dev:pid()})})
+   .then(function(r){return r.json().then(function(j){return{ok:r.ok,j:j}})})
+   .then(function(x){if(x.ok)location.reload();else{$('err').textContent=x.j.error||'Something went wrong.';b.disabled=false}})
+   .catch(function(){$('err').textContent='Could not reach the server.';b.disabled=false})}
+$('go').onclick=go;$('key').onkeydown=function(e){if(e.key==='Enter')go()};$('key').focus();
+})();
+</script>
+</body>
+</html>

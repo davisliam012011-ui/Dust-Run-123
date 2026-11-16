@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dust Run · Admin</title>
+<style>
+:root{--bg:#f4f1ea;--card:#fff;--ink:#1d1a14;--mute:#7a7366;--line:#e2dccf;--acc:#c77d00;--ok:#2a9d57;--bad:#c0392b}
+@media (prefers-color-scheme:dark){:root{--bg:#14100b;--card:#1d1812;--ink:#f1ead9;--mute:#9b9280;--line:#322b20;--acc:#ffb000;--ok:#4cd07d;--bad:#ff6a5a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,sans-serif;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+header{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--line)}
+h1{font-size:18px;margin:0;letter-spacing:1px}h1 b{color:var(--acc)}
+.sp{flex:1}.dot{width:9px;height:9px;border-radius:50%;background:var(--ok);display:inline-block;margin-right:6px}
+main{max-width:1100px;margin:0 auto;padding:18px 20px 40px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.k{color:var(--mute);font-size:12px;text-transform:uppercase;letter-spacing:.6px}.v{font-size:28px;font-weight:700;margin-top:2px}
+h2{font-size:14px;margin:0 0 10px;text-transform:uppercase;letter-spacing:.6px;color:var(--mute)}
+.wrap{overflow-x:auto}table{width:100%;border-collapse:collapse;min-width:560px}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap}th{color:var(--mute);font-weight:600;font-size:12px}
+.pill{display:inline-block;padding:1px 8px;border-radius:99px;font-size:12px;border:1px solid var(--line)}
+.on{color:var(--ok);border-color:var(--ok)}.off{color:var(--mute)}.rv{color:var(--bad);border-color:var(--bad)}
+.bars{display:flex;align-items:flex-end;gap:3px;height:90px}.bars i{flex:1;background:var(--acc);border-radius:2px 2px 0 0;min-height:2px;opacity:.85}
+.axis{display:flex;justify-content:space-between;color:var(--mute);font-size:11px;margin-top:4px}
+button,input{font:inherit;padding:7px 12px;border-radius:7px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+button{cursor:pointer;background:var(--acc);color:#1d1a14;border:0;font-weight:600}button.g{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+#login{max-width:340px;margin:18vh auto;text-align:center}#login input{width:100%;margin:12px 0}
+code{background:var(--bg);padding:1px 6px;border-radius:4px}
+.empty{color:var(--mute);padding:10px 0}.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px;margin-bottom:16px}
+</style>
+</head>
+<body>
+<div id="login" class="card">
+  <h1>DUST <b>RUN</b> · ADMIN</h1>
+  <input id="key" type="password" placeholder="Admin key" autocomplete="current-password">
+  <button id="go" style="width:100%">Sign in</button>
+  <p id="lerr" style="color:var(--bad);min-height:20px;margin:8px 0 0"></p>
+</div>
+
+<div id="app" hidden>
+  <header><h1>DUST <b>RUN</b> · ADMIN</h1><span class="sp"></span><span><span class="dot"></span><span id="upd">live</span></span><button class="g" id="out">Sign out</button></header>
+  <main>
+    <div class="grid" id="tiles"></div>
+    <div class="two">
+      <div class="card"><h2>Unique players, last 24 hours</h2><div class="bars" id="bars"></div><div class="axis"><span>24h ago</span><span>now</span></div></div>
+      <div class="card"><h2>Paywall</h2><div id="pw"></div>
+        <div class="row" style="margin-top:10px"><input id="note" placeholder="Note (e.g. buyer name)" maxlength="40" style="flex:1;min-width:140px"><input id="uses" type="number" min="0" max="1000" value="1" title="Max devices (0 = unlimited)" style="width:80px"><button id="mk">New key</button></div>
+        <div class="wrap"><table><thead><tr><th>Key</th><th>Note</th><th>Used</th><th></th></tr></thead><tbody id="keys"></tbody></table></div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:16px"><h2>Playing now</h2><div class="wrap"><table><thead><tr><th>Player</th><th>Status</th><th>Map</th><th>Party</th><th>Round</th><th>Online for</th><th>Sessions</th></tr></thead><tbody id="now"></tbody></table></div></div>
+    <div class="card"><h2>Recently seen</h2><div class="wrap"><table><thead><tr><th>Player</th><th>Last seen</th><th>Sessions</th><th>Total time</th><th>First seen</th></tr></thead><tbody id="recent"></tbody></table></div></div>
+  </main>
+</div>
+
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)},KEY='';
+try{KEY=sessionStorage.getItem('dr_admin')||''}catch(e){}
+function el(t,txt,cls){var e=document.createElement(t);if(txt!=null)e.textContent=txt;if(cls)e.className=cls;return e}
+function ago(ms){var s=Math.max(0,Math.round(ms/1000));if(s<60)return s+'s';var m=Math.round(s/60);if(m<60)return m+'m';var h=Math.floor(m/60);return h<24?h+'h '+(m%60)+'m':Math.floor(h/24)+'d'}
+function api(path,body){return fetch(path,{method:body?'POST':'GET',headers:{'x-admin-key':KEY,'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined}).then(function(r){if(r.status===401)throw new Error('auth');return r.json()})}
+function tile(k,v){var d=el('div',null,'card');d.append(el('div',k,'k'),el('div',v,'v'));return d}
+function fill(id,rows,cols,emptyMsg){var tb=$(id);tb.textContent='';if(!rows.length){var tr=el('tr'),td=el('td',emptyMsg,'empty');td.colSpan=cols;tr.append(td);tb.append(tr);return}rows.forEach(function(r){tb.append(r)})}
+function tr(cells){var r=el('tr');cells.forEach(function(c){var td=el('td');if(c instanceof Node)td.append(c);else td.textContent=c;r.append(td)});return r}
+var MAPS={desert:'Desert',gulag:'Gulag',harbor:'Harbor',range:'Range',western:'Goldspur',forest:'Pinewatch',dust:'Dust',frost:'Frostbite',sky:'Skyline'};
+function render(d){
+  var t=$('tiles');t.textContent='';
+  t.append(tile('Online now',d.online),tile('Active parties',d.parties),tile('Players 24h',d.unique24h),tile('Players 7d',d.unique7d),tile('All time',d.uniqueAll),tile('Avg session',d.avgMinutes+' min'));
+  var mx=Math.max(1,Math.max.apply(null,d.series.map(function(s){return s.n}))),b=$('bars');b.textContent='';
+  d.series.forEach(function(s){var i=el('i');i.style.height=Math.round(s.n/mx*100)+'%';i.title=s.h.replace('T',' ')+':00 UTC · '+s.n+' players';b.append(i)});
+  fill('now',d.players.map(function(p){var s=p.state||{};return tr([p.name+' ·'+p.id+(s.src==='file'?' (download)':''),el('span',s.m==='play'?'In match':'In menu','pill on'),MAPS[s.map]||s.map||'-',s.p?s.p+(s.np?' ('+s.np+')':''):'-',s.m==='play'&&s.r?String(s.r):'-',ago(d.now-p.since),String(p.sessions)])}),7,'Nobody online right now.');
+  fill('recent',d.recent.map(function(p){return tr([p.name+' ·'+p.id,ago(d.now-p.last)+' ago',String(p.sessions),p.minutes+' min',new Date(p.first).toLocaleDateString()])}),5,'No history yet.');
+  $('pw').textContent=d.paywall?'Paywall is ON: players need a key to open the game.':'Paywall is OFF: anyone with the link can play. Set PAYWALL=on on the server to require keys.';
+  fill('keys',d.keys.map(function(k){var b=el('button',k.revoked?'Restore':'Revoke','g');b.onclick=function(){api('/api/admin/keys/revoke',{key:k.key}).then(poll)};
+    return tr([el('code',k.key),k.note||'',k.uses+(k.maxUses?'/'+k.maxUses:''),k.revoked?el('span','revoked','pill rv'):b])}),4,'No keys yet.');
+  $('upd').textContent='live · '+new Date(d.now).toLocaleTimeString();
+}
+var timer;
+function poll(){api('/api/admin/stats').then(function(d){$('login').hidden=true;$('app').hidden=false;render(d)}).catch(function(e){
+  if(e.message==='auth'){KEY='';try{sessionStorage.removeItem('dr_admin')}catch(x){}clearInterval(timer);$('app').hidden=true;$('login').hidden=false;$('lerr').textContent='Wrong admin key.'}else $('upd').textContent='connection lost, retrying...'})}
+function start(){clearInterval(timer);poll();timer=setInterval(poll,5000)}
+$('go').onclick=function(){KEY=$('key').value.trim();try{sessionStorage.setItem('dr_admin',KEY)}catch(e){}$('lerr').textContent='';start()};
+$('key').onkeydown=function(e){if(e.key==='Enter')$('go').click()};
+$('out').onclick=function(){KEY='';try{sessionStorage.removeItem('dr_admin')}catch(e){}clearInterval(timer);$('app').hidden=true;$('login').hidden=false};
+$('mk').onclick=function(){api('/api/admin/keys',{note:$('note').value,maxUses:+$('uses').value}).then(function(){$('note').value='';poll()})};
+if(KEY)start();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "dust-run",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Dust Run game server: access-key paywall and admin dashboard",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

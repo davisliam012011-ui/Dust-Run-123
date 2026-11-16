@@ -1,0 +1,22 @@
+# Render Blueprint (access-key paywall, no online payments).
+# The disk keeps your keys between restarts and needs a paid ("starter") instance.
+services:
+  - type: web
+    name: dust-run
+    runtime: node
+    plan: starter
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /healthz
+    autoDeploy: true
+    disk:
+      name: dust-run-data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: DATA_DIR
+        value: /data
+      - key: PAYWALL
+        value: "on"
+      - key: ADMIN_KEY
+        sync: false
